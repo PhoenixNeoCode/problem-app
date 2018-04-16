@@ -1,0 +1,150 @@
+import org.springframework.util.StringUtils
+
+buildscript {
+    ext {
+        appName = 'problem'
+        springBootVersion = '1.5.9.RELEASE'
+        springCloudVersion = 'Edgware.SR2'
+        cxfVersion = '3.2.1'
+        globalSourceCompatibility = 1.8
+        globalTargetCompatibility = 1.8
+        generatedSources = "${buildDir}/generated-sources/"
+        cxfOutputDir = "${generatedSources}/cxf"
+        resourcesDir = "src/main/resources"
+        wsdlDir = file("${resourcesDir}/wsdl")
+    }
+    repositories {
+        maven { url "https://plugins.gradle.org/m2/" }
+        mavenCentral()
+        jcenter()
+    }
+    dependencies {
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+        classpath "com.github.ben-manes:gradle-versions-plugin:0.15.0"
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.5.2"
+        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.6.1"
+    }
+}
+
+configurations {
+    cxfTool
+}
+
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'com.github.ben-manes.versions'
+apply plugin: 'com.jfrog.artifactory'
+apply plugin: 'maven-publish'
+
+task wsdl2java(type: JavaExec) {
+    ext {
+        outputDir = file(cxfOutputDir)
+        wsdlFiles = new FileNameByRegexFinder().getFileNames("${wsdlDir}", /.*\.wsdl/)
+    }
+
+    wsdlFiles.each { String wsdlFile ->
+        outputs.upToDateWhen { false }
+        outputs.dir outputDir
+        main = 'org.apache.cxf.tools.wsdlto.WSDLToJava'
+        classpath = configurations.cxfTool
+        args '-d', outputDir
+        args '-wsdlLocation', "/wsdl/" + new File(wsdlFile).name
+        args '-verbose'
+        args '-validate'
+        args wsdlFile
+    }
+}
+
+sourceSets {
+    main.java.srcDirs cxfOutputDir
+}
+
+task copyToLib(type: Copy) {
+    into "$buildDir/output/lib"
+    from configurations.runtime
+}
+
+task updateApplicationProperties {
+    doLast {
+        def configFile = new File('src/main/resources/application.yml')
+        println "updating version to '1.0' in ${configFile}"
+        String configContent = configFile.getText('UTF-8')
+        configContent = configContent.replaceAll(/info:\n {2}build:\n {4}version: .*/, "info:\n  build:\n    version: 1.0")
+        configFile.write(configContent, 'UTF-8')
+    }
+}
+
+task cleanLibsDir(type: Delete) {
+    delete "$buildDir/libs"
+}
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = globalSourceCompatibility
+    targetCompatibility = globalTargetCompatibility
+    dependsOn updateApplicationProperties
+    dependsOn wsdl2java
+    dependsOn cleanLibsDir
+}
+
+jar {
+    baseName = "${appName}"
+}
+
+repositories {
+    mavenCentral()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId "${appName}"
+            version "${version}"
+            from components.java
+        }
+    }
+}
+
+artifactoryPublish.dependsOn('assemble')
+
+dependencies {
+    compileOnly 'org.projectlombok:lombok:1.16.18'
+
+    compile 'org.springframework.cloud:spring-cloud-spring-service-connector'
+    compile 'org.springframework.cloud:spring-cloud-cloudfoundry-connector'
+    compile 'org.springframework.cloud:spring-cloud-starter-feign'
+    compile 'org.springframework.boot:spring-boot-starter-actuator'
+
+    compile 'org.springframework.boot:spring-boot-starter-security'
+    compile 'org.springframework.boot:spring-boot-starter-web'
+    compile 'org.springframework.boot:spring-boot-starter-web-services'
+    compile 'org.springframework.boot:spring-boot-configuration-processor'
+
+    // Apache CXF WSDL2JAVA
+    compile group: 'org.apache.cxf', name: 'cxf-core', version: "${cxfVersion}"
+    compile group: 'org.apache.cxf', name: 'cxf-rt-frontend-jaxws', version: "${cxfVersion}"
+    compile "org.apache.cxf:cxf-spring-boot-starter-jaxws:${cxfVersion}"
+
+    compile 'org.modelmapper:modelmapper:1.1.0'
+
+    // Tests
+    testCompile 'org.springframework.boot:spring-boot-starter-test'
+    testCompile 'org.springframework.security:spring-security-test'
+    testCompile 'org.springframework.ws:spring-ws-test'
+    testCompile 'org.springframework.cloud:spring-cloud-contract-wiremock:1.2.3.RELEASE'
+
+    // wsdl2java
+    cxfTool "org.apache.cxf:cxf-tools-wsdlto-frontend-jaxws:$cxfVersion"
+    cxfTool "org.apache.cxf:cxf-tools-wsdlto-databinding-jaxb:$cxfVersion"
+    cxfTool "org.apache.cxf:cxf-tools-common:$cxfVersion"
+    cxfTool "org.apache.cxf:cxf-tools-wsdlto-core:$cxfVersion"
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion"
+    }
+    resolutionStrategy {
+        cacheChangingModulesFor 0, 'seconds'
+        cacheDynamicVersionsFor 0, 'seconds'
+    }
+}

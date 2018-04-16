@@ -1,0 +1,19 @@
+{
+  "properties": [
+    {
+      "name": "application.clients.username",
+      "type": "java.lang.String",
+      "description": "Username that can be used to access the APIs"
+    },
+    {
+      "name": "application.clients.password",
+      "type": "java.lang.String",
+      "description": "Password of the user"
+    },
+    {
+      "name": "application.clients.roles",
+      "type": "java.lang.String",
+      "description": "Comma-separated roles. Possible values are listed in Roles.java. Note that you must not specify ROLE_ as prefix. E.g. use READ instead of ROLE_READ"
+    }
+  ]
+}

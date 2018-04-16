@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wsdl:definitions name="Problem"
+                  targetNamespace="http://problem.com" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:tns="http://problem.com" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+
+    <wsdl:types>
+        <xs:schema attributeFormDefault="unqualified"
+                   elementFormDefault="unqualified" targetNamespace="http://problem.com"
+                   xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+
+            <xs:element name="myException">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="message" maxOccurs="1" minOccurs="1" nillable="false" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+
+
+            <xs:element name="isActiveRequest">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="id" maxOccurs="1" minOccurs="1"
+                                    nillable="false" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="isActiveResponse" type="xs:boolean"/>
+
+            <xs:element name="readSomethingRequest">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="id" maxOccurs="1" minOccurs="1"
+                                    nillable="false" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="readSomethingResponse">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="something" minOccurs="0"
+                                    maxOccurs="1" nillable="false" type="xs:string">
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+
+        </xs:schema>
+    </wsdl:types>
+
+    <wsdl:message name="myException">
+        <wsdl:part name="parameters" element="tns:myException"></wsdl:part>
+    </wsdl:message>
+
+    <wsdl:message name="isActiveRequest">
+        <wsdl:part name="parameters" element="tns:isActiveRequest"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="isActiveResponse">
+        <wsdl:part name="parameters" element="tns:isActiveResponse"></wsdl:part>
+    </wsdl:message>
+
+    <wsdl:message name="readSomethingRequest">
+        <wsdl:part name="parameters" element="tns:readSomethingRequest"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="readSomethingResponse">
+        <wsdl:part name="parameters" element="tns:readSomethingResponse"></wsdl:part>
+    </wsdl:message>
+
+    <!-- PortType -->
+    <wsdl:portType name="problem">
+
+        <wsdl:operation name="isActive">
+            <wsdl:input message="tns:isActiveRequest" name="isActiveRequest"/>
+            <wsdl:output message="tns:isActiveResponse" name="isActiveResponse"/>
+            <wsdl:fault message="tns:myException" name="fault"/>
+        </wsdl:operation>
+
+        <wsdl:operation name="readSomething">
+            <wsdl:input message="tns:readSomethingRequest" name="readSomethingRequest"/>
+            <wsdl:output message="tns:readSomethingResponse" name="readSomethingResponse"/>
+            <wsdl:fault message="tns:myException" name="fault"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <!-- SOAPBinding -->
+    <wsdl:binding name="problem_SOAPBinding" type="tns:problem">
+        <soap:binding style="document"
+                      transport="http://schemas.xmlsoap.org/soap/http"/>
+
+        <wsdl:operation name="isActive">
+            <soap:operation soapAction="isActive"/>
+            <wsdl:input name="isActiveRequest">
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output name="isActiveResponse">
+                <soap:body use="literal"/>
+            </wsdl:output>
+            <wsdl:fault name="fault">
+                <soap:fault use="literal" name="fault"/>
+            </wsdl:fault>
+        </wsdl:operation>
+
+        <wsdl:operation name="readSomething">
+            <soap:operation soapAction="readSomething"/>
+            <wsdl:input name="readSomethingRequest">
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output name="readSomethingResponse">
+                <soap:body use="literal"/>
+            </wsdl:output>
+            <wsdl:fault name="fault">
+                <soap:fault use="literal" name="fault"/>
+            </wsdl:fault>
+        </wsdl:operation>
+
+    </wsdl:binding>
+
+    <wsdl:service name="Problem_v0_1">
+        <wsdl:port binding="tns:problem_SOAPBinding"
+                   name="ServiceSoapConnectorDefaultHttpPort">
+            <soap:address location="http://localhost:8089/soap"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

@@ -1,0 +1,12 @@
+info:
+  service:
+    name: "${spring.application.name:undefined-app-name}-localhost"
+
+server:
+  port: 8089
+
+application.clients:
+    - username: user
+      password: password
+      roles: PERMISSION
+

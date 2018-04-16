@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: problem
+  profiles:
+    active: localhost
+  metrics:
+    servo:
+      enabled: false
+
+spring.jackson:
+  deserialization.fail-on-unknown-properties: false
+  default-property-inclusion: non_null
+
+app:
+  date-time-format: "yyyy-MM-dd'T'HH:mm:ss.SSS"
+
